@@ -21,6 +21,15 @@
 #define COMPILER_CLANG 1
 #endif
 
+#ifdef _MSC_VER
+#define COMPILER_MSVC 1
+#if defined(_M_X64) || defined(_M_AMD64)
+#define COMPILER_MSVC64 1
+#elif defined(_M_IX86)
+#define COMPILER_MSVC32 1
+#endif
+#endif
+
 #if defined( _X360 )
 	#define NO_STEAM
 	#define NO_VOICE
