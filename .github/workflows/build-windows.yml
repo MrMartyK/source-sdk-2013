@@ -57,11 +57,22 @@ jobs:
         retention-days: 7
       continue-on-error: true
 
-    - name: Run basic smoke tests
+    - name: Build CMake tests
+      working-directory: .
+      run: |
+        cmake -S . -B build_ci -DCMAKE_BUILD_TYPE=Release
+        cmake --build build_ci --config Release --target source15_tests
+
+    - name: Run unit tests
+      working-directory: build_ci
+      run: |
+        ctest --output-on-failure -C Release --verbose
+
+    - name: Run smoke tests (placeholder)
       if: success()
       shell: cmd
       run: |
-        echo TODO: Add headless map launch tests
+        echo TODO: Add headless map launch tests for parity testing
         exit 0
 
   static-analysis:
