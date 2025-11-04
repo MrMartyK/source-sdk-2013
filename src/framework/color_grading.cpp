@@ -174,4 +174,37 @@ Vector3 AdjustColorTemperature(const Vector3& color, float kelvin) {
 	return result;
 }
 
+Vector3 AdjustContrast(const Vector3& color, float contrast) {
+	// Contrast pivots around midpoint (0.5)
+	// Formula: result = (color - 0.5) * contrast + 0.5
+	const float midpoint = 0.5f;
+
+	Vector3 result;
+	result.x = (color.x - midpoint) * contrast + midpoint;
+	result.y = (color.y - midpoint) * contrast + midpoint;
+	result.z = (color.z - midpoint) * contrast + midpoint;
+
+	// Clamp to [0, 1] range
+	result.x = Saturate(result.x);
+	result.y = Saturate(result.y);
+	result.z = Saturate(result.z);
+
+	return result;
+}
+
+Vector3 AdjustBrightness(const Vector3& color, float brightness) {
+	// Simple uniform scaling
+	Vector3 result;
+	result.x = color.x * brightness;
+	result.y = color.y * brightness;
+	result.z = color.z * brightness;
+
+	// Clamp to [0, 1] range
+	result.x = Saturate(result.x);
+	result.y = Saturate(result.y);
+	result.z = Saturate(result.z);
+
+	return result;
+}
+
 } // namespace S15

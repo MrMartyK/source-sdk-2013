@@ -100,6 +100,34 @@ Vector3 AdjustSaturation(const Vector3& color, float saturation);
  */
 Vector3 AdjustColorTemperature(const Vector3& color, float kelvin);
 
+/**
+ * Adjust contrast
+ *
+ * Controls the difference between light and dark values, pivoting around midpoint (0.5).
+ * 0.0 = no contrast (flat gray at 0.5)
+ * 1.0 = normal (no change)
+ * 2.0 = doubled contrast
+ *
+ * @param color Input color
+ * @param contrast Contrast multiplier (0 to 2+)
+ * @return Contrast-adjusted color
+ */
+Vector3 AdjustContrast(const Vector3& color, float contrast);
+
+/**
+ * Adjust brightness
+ *
+ * Uniformly scales all color values (simple brightness control).
+ * 0.0 = black
+ * 1.0 = normal (no change)
+ * 2.0 = doubled brightness
+ *
+ * @param color Input color
+ * @param brightness Brightness multiplier (0 to 2+)
+ * @return Brightness-adjusted color
+ */
+Vector3 AdjustBrightness(const Vector3& color, float brightness);
+
 } // namespace S15
 
 #endif // COLOR_GRADING_H

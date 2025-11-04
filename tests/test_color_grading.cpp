@@ -359,3 +359,125 @@ TEST_CASE("ColorTemperature adjusts white balance", "[color_grading][temperature
 		REQUIRE(warm.z < cool.z);
 	}
 }
+
+// ============================================================================
+// Contrast Adjustment Tests
+// ============================================================================
+
+TEST_CASE("Contrast adjustment pivots around midpoint", "[color_grading][contrast]") {
+	SECTION("Contrast 0.0 (no contrast, flat gray)") {
+		Vector3 color(0.25f, 0.5f, 0.75f);
+		Vector3 result = AdjustContrast(color, 0.0f);
+		// All values should converge to midpoint (0.5)
+		REQUIRE_THAT(result.x, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(result.y, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(result.z, WithinAbs(0.5f, 0.001f));
+	}
+
+	SECTION("Contrast 1.0 (normal, no change)") {
+		Vector3 color(0.25f, 0.5f, 0.75f);
+		Vector3 result = AdjustContrast(color, 1.0f);
+		REQUIRE_THAT(result.x, WithinAbs(0.25f, 0.001f));
+		REQUIRE_THAT(result.y, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(result.z, WithinAbs(0.75f, 0.001f));
+	}
+
+	SECTION("Contrast 2.0 (increased contrast)") {
+		Vector3 color(0.25f, 0.5f, 0.75f);
+		Vector3 result = AdjustContrast(color, 2.0f);
+		// Values below 0.5 get darker, above 0.5 get brighter
+		REQUIRE(result.x < 0.25f); // Darker
+		REQUIRE_THAT(result.y, WithinAbs(0.5f, 0.001f)); // Midpoint unchanged
+		REQUIRE(result.z > 0.75f); // Brighter
+	}
+
+	SECTION("Contrast 0.5 (reduced contrast)") {
+		Vector3 color(0.0f, 0.5f, 1.0f);
+		Vector3 result = AdjustContrast(color, 0.5f);
+		// Values move toward midpoint
+		REQUIRE(result.x > 0.0f); // Lighter than black
+		REQUIRE_THAT(result.y, WithinAbs(0.5f, 0.001f)); // Midpoint unchanged
+		REQUIRE(result.z < 1.0f); // Darker than white
+	}
+
+	SECTION("Contrast preserves midpoint (0.5)") {
+		Vector3 midGray(0.5f, 0.5f, 0.5f);
+		Vector3 low = AdjustContrast(midGray, 0.0f);
+		Vector3 normal = AdjustContrast(midGray, 1.0f);
+		Vector3 high = AdjustContrast(midGray, 2.0f);
+		// Midpoint should always stay at 0.5
+		REQUIRE_THAT(low.x, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(normal.x, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(high.x, WithinAbs(0.5f, 0.001f));
+	}
+
+	SECTION("Contrast clamps output to [0, 1]") {
+		Vector3 color(0.1f, 0.9f, 0.5f);
+		Vector3 result = AdjustContrast(color, 5.0f); // Extreme contrast
+		REQUIRE(result.x >= 0.0f);
+		REQUIRE(result.x <= 1.0f);
+		REQUIRE(result.y >= 0.0f);
+		REQUIRE(result.y <= 1.0f);
+	}
+}
+
+// ============================================================================
+// Brightness Adjustment Tests
+// ============================================================================
+
+TEST_CASE("Brightness adjustment shifts all values", "[color_grading][brightness]") {
+	SECTION("Brightness 0.0 (darken to black)") {
+		Vector3 color(0.5f, 0.75f, 1.0f);
+		Vector3 result = AdjustBrightness(color, 0.0f);
+		REQUIRE_THAT(result.x, WithinAbs(0.0f, 0.001f));
+		REQUIRE_THAT(result.y, WithinAbs(0.0f, 0.001f));
+		REQUIRE_THAT(result.z, WithinAbs(0.0f, 0.001f));
+	}
+
+	SECTION("Brightness 1.0 (normal, no change)") {
+		Vector3 color(0.25f, 0.5f, 0.75f);
+		Vector3 result = AdjustBrightness(color, 1.0f);
+		REQUIRE_THAT(result.x, WithinAbs(0.25f, 0.001f));
+		REQUIRE_THAT(result.y, WithinAbs(0.5f, 0.001f));
+		REQUIRE_THAT(result.z, WithinAbs(0.75f, 0.001f));
+	}
+
+	SECTION("Brightness 1.5 (brighten)") {
+		Vector3 color(0.2f, 0.4f, 0.6f);
+		Vector3 result = AdjustBrightness(color, 1.5f);
+		REQUIRE_THAT(result.x, WithinAbs(0.3f, 0.001f)); // 0.2 * 1.5 = 0.3
+		REQUIRE_THAT(result.y, WithinAbs(0.6f, 0.001f)); // 0.4 * 1.5 = 0.6
+		REQUIRE_THAT(result.z, WithinAbs(0.9f, 0.001f)); // 0.6 * 1.5 = 0.9
+	}
+
+	SECTION("Brightness 0.5 (darken)") {
+		Vector3 color(0.4f, 0.6f, 0.8f);
+		Vector3 result = AdjustBrightness(color, 0.5f);
+		REQUIRE_THAT(result.x, WithinAbs(0.2f, 0.001f)); // 0.4 * 0.5 = 0.2
+		REQUIRE_THAT(result.y, WithinAbs(0.3f, 0.001f)); // 0.6 * 0.5 = 0.3
+		REQUIRE_THAT(result.z, WithinAbs(0.4f, 0.001f)); // 0.8 * 0.5 = 0.4
+	}
+
+	SECTION("Brightness clamps output to [0, 1]") {
+		Vector3 color(0.8f, 0.9f, 1.0f);
+		Vector3 result = AdjustBrightness(color, 2.0f); // Extreme brightness
+		REQUIRE(result.x >= 0.0f);
+		REQUIRE(result.x <= 1.0f);
+		REQUIRE(result.y >= 0.0f);
+		REQUIRE(result.y <= 1.0f);
+		REQUIRE(result.z >= 0.0f);
+		REQUIRE(result.z <= 1.0f);
+	}
+
+	SECTION("Brightness affects black and white differently than contrast") {
+		Vector3 black(0.0f, 0.0f, 0.0f);
+		Vector3 white(1.0f, 1.0f, 1.0f);
+
+		// Brightness scales uniformly
+		Vector3 brightBlack = AdjustBrightness(black, 1.5f);
+		Vector3 brightWhite = AdjustBrightness(white, 1.5f);
+
+		REQUIRE_THAT(brightBlack.x, WithinAbs(0.0f, 0.001f)); // 0 * 1.5 = 0
+		REQUIRE(brightWhite.x >= 1.0f); // 1 * 1.5 = 1.5 (clamped to 1.0)
+	}
+}

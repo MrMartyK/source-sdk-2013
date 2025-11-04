@@ -475,6 +475,43 @@ float3 AdjustColorTemperature( float3 color, float kelvin )
 	return color * factor;
 }
 
+/**
+ * Adjust contrast
+ *
+ * Controls the difference between light and dark values, pivoting around midpoint (0.5).
+ * 0.0 = no contrast (flat gray at 0.5)
+ * 1.0 = normal (no change)
+ * 2.0 = doubled contrast
+ *
+ * @param color Input color
+ * @param contrast Contrast multiplier (0 to 2+)
+ * @return Contrast-adjusted color
+ */
+float3 AdjustContrast( float3 color, float contrast )
+{
+	const float midpoint = 0.5f;
+	// Pivot around midpoint: result = (color - 0.5) * contrast + 0.5
+	float3 result = (color - midpoint) * contrast + midpoint;
+	return saturate( result );
+}
+
+/**
+ * Adjust brightness
+ *
+ * Uniformly scales all color values (simple brightness control).
+ * 0.0 = black
+ * 1.0 = normal (no change)
+ * 2.0 = doubled brightness
+ *
+ * @param color Input color
+ * @param brightness Brightness multiplier (0 to 2+)
+ * @return Brightness-adjusted color
+ */
+float3 AdjustBrightness( float3 color, float brightness )
+{
+	return saturate( color * brightness );
+}
+
 float4 FinalOutput( const float4 vShaderColor, float pixelFogFactor, const int iPIXELFOGTYPE, const int iTONEMAP_SCALE_TYPE, const bool bWriteDepthToDestAlpha = false, const float flProjZ = 1.0f )
 {
 	float4 result;
