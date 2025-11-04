@@ -502,3 +502,17 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Source 1.5 additions
+# CMake build directories
+build/
+build_*/
+cmake-build-*/
+
+# CMake cache and generated files
+CMakeCache.txt
+cmake_install.cmake
+DartConfiguration.tcl
+
+# Catch2 fetched sources (CMake FetchContent)
+_deps/

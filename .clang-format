@@ -1,0 +1,56 @@
+# Source SDK 2013 / Source 1.5 Code Style
+# Based on observed Valve conventions in baseentity.cpp and tier0/tier1 code
+
+---
+BasedOnStyle: LLVM
+
+# Indentation - Valve uses TABS
+IndentWidth: 4
+UseTab: ForIndentation
+TabWidth: 4
+
+# Braces - K&R style (same line for functions, control flow)
+BreakBeforeBraces: Attach
+
+# Line length - Valve code has some long lines, be practical
+ColumnLimit: 120
+
+# Pointers and references - left-aligned (Valve style)
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Functions
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakAfterReturnType: None
+
+# Control flow
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Arguments and parameters
+AlignAfterOpenBracket: DontAlign
+BinPackArguments: true
+BinPackParameters: true
+
+# Includes - preserve existing order (game includes, then system)
+SortIncludes: Never
+
+# Namespaces - Valve doesn't use many namespaces, keep compact
+CompactNamespaces: false
+NamespaceIndentation: None
+
+# Spacing
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+
+# Comments
+ReflowComments: true
+
+# Preprocessor
+IndentPPDirectives: AfterHash
+
+# Breaking
+AlwaysBreakBeforeMultilineStrings: false
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true

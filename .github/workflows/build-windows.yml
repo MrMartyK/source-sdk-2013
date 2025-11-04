@@ -1,0 +1,81 @@
+name: Build Windows x64
+
+on:
+  push:
+    branches: [ master, source-1.5 ]
+  pull_request:
+    branches: [ master, source-1.5 ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Cache VPC generated projects
+      uses: actions/cache@v4
+      with:
+        path: src/_vpc_/generated
+        key: ${{ runner.os }}-vpc-${{ hashFiles('src/vpc_scripts/**/*.vpc') }}
+
+    - name: Generate Visual Studio projects
+      working-directory: src
+      shell: cmd
+      run: |
+        call createallprojects.bat
+
+    - name: Build everything.sln
+      working-directory: src
+      run: |
+        msbuild everything.sln /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-x64-binaries
+        path: |
+          game/*/bin/*.dll
+          game/*/bin/*.pdb
+        retention-days: 7
+
+    - name: Run basic smoke tests
+      if: success()
+      shell: cmd
+      run: |
+        echo TODO: Add headless map launch tests
+        exit 0
+
+  static-analysis:
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup clang-tidy
+      run: |
+        choco install llvm -y
+
+    - name: Run clang-format check
+      if: false
+      run: |
+        echo "TODO: Add clang-format check when .clang-format is added"
+
+    - name: Static analysis placeholder
+      run: |
+        echo "TODO: Add cppcheck, clang-tidy after CMake migration"
