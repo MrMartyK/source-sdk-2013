@@ -64,13 +64,15 @@
 * [x] **PBR shader foundation** (BRDF functions, VS/PS, material system) - source files ready
 * [x] **PBR shader build integration** (added to sdkshaders_dx9_20b.txt, documented)
 * [ ] **PBR shader compilation** (run buildshaders.bat, test compiled shaders)
-* [ ] **Authoring preset**: Substance Painter export (albedo/normal/MRAO)
-* [ ] **Starter library**: 5 CC0 materials (metal/wood/concrete/plastic/fabric)
-* [ ] **Docs**: "Hello PBR Prop" (2-min video + steps)
+* [x] **Material workflow documentation** (PBR_MATERIALS_GUIDE.md, 800+ lines)
+* [x] **Authoring preset**: Substance Painter export JSON (albedo/normal/MRAO)
+* [x] **VMT templates**: Template + 3 examples (steel, wood, plastic)
+* [ ] **Material library**: 5 CC0 materials with textures
+* [ ] **Video guide**: "Hello PBR Prop" (2-min walkthrough)
 
 **DoD:** Side-by-side Phong vs PBR; sample assets render correctly; doc followed by fresh user in <15 min.
 
-**STATUS**: 🔄 55% Complete (shader foundation ✅, build integration ✅, compilation pending)
+**STATUS**: 🔄 70% Complete (foundation ✅, build ✅, docs ✅, materials pending)
 
 ---
 
@@ -166,9 +168,17 @@
 - [x] Add SSAO shaders to sdkshaders_dx9_20b.txt
 - [x] Create shader build documentation (SHADER_BUILD_INTEGRATION.md, 300+ lines)
 
+### ✅ Day 5 Extended - PBR Materials Documentation
+- [x] Create comprehensive PBR materials guide (PBR_MATERIALS_GUIDE.md, 800+ lines)
+- [x] Document Substance Painter export preset (JSON configuration)
+- [x] Create VMT template (pbr_template.vmt)
+- [x] Create 3 example VMTs (steel, wood, plastic)
+- [x] Document CC0 material sources (ambientCG, Poly Haven, etc.)
+
 ### 🔄 In Progress (Next)
 - [ ] SSAO lighting integration (modify lighting shaders)
 - [ ] PBR shader compilation (run buildshaders.bat, test)
+- [ ] Material library creation (download/package CC0 materials)
 
 ---
 
@@ -233,17 +243,17 @@
 
 ## Progress Summary
 
-**Overall**: 50% Complete (Phases 0-3 in progress)
+**Overall**: 53% Complete (Phases 0-3 in progress)
 
-**Current Focus**: Phase 2 SSAO Integration (95%), Phase 3 PBR Materials (55%)
+**Current Focus**: Phase 2 SSAO (95%), Phase 3 PBR Materials (70%)
 
-**Recent**: Shader build integration ✅, SSAO render pipeline ✅, PBR foundation ✅
+**Recent**: PBR materials documentation ✅, VMT templates ✅, Substance export preset ✅
 
-**Next**: SSAO lighting integration, PBR shader compilation, material library
+**Next**: PBR shader compilation, material library, SSAO lighting integration
 
 **Blockers**: None (CI green, tests passing, docs current)
 
 ---
 
-*Last updated: 2025-11-04 (Day 5 extended - shader build integration)*
-*Active sprint: SSAO render pipeline complete, PBR shaders in build system*
+*Last updated: 2025-11-04 (Day 5 extended - PBR materials documentation)*
+*Active sprint: PBR materials workflow documented, VMT templates ready*

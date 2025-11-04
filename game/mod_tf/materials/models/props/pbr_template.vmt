@@ -1,0 +1,54 @@
+// Source 1.5 PBR Material Template
+// Copy this file and replace texture paths for your material
+
+"PBR"
+{
+	// === Required Textures ===
+
+	// Albedo (Base Color) - RGB, sRGB colorspace
+	// No lighting, shadows, or highlights - pure surface color
+	"$basetexture" "models/props/example_albedo"
+
+	// Normal Map - RGB, tangent-space, DirectX format (green channel down = inward)
+	// Adds surface detail without additional geometry
+	"$bumpmap" "models/props/example_normal"
+
+	// MRAO - Packed texture (linear colorspace):
+	//   R channel: Metalness (0 = non-metal/dielectric, 1 = metal)
+	//   G channel: Roughness (0 = smooth/glossy, 1 = rough/matte)
+	//   B channel: Ambient Occlusion (0 = fully occluded, 1 = no occlusion)
+	"$mraotexture" "models/props/example_mrao"
+
+	// === Optional Parameters ===
+
+	// Environment map for reflections
+	// "env_cubemap" uses map's auto-generated cubemaps
+	"$envmap" "env_cubemap"
+
+	// Emission texture (optional) - self-illuminated areas
+	// Use for LEDs, screens, glowing elements
+	// "$emissiontexture" "models/props/example_emission"
+
+	// Environment map contrast/intensity (default 1.0)
+	// Higher = stronger reflections, lower = more subtle
+	// "$envmapcontrast" "1.0"
+
+	// === Surface Properties ===
+
+	// Surface type for physics interactions and footstep sounds
+	// Common values: "metal", "wood", "plastic", "concrete", "rubber", "glass"
+	"$surfaceprop" "metal"
+
+	// === Rendering Flags ===
+
+	// Translucent rendering (0 = opaque, 1 = transparent)
+	// Most materials should be opaque
+	"$translucent" "0"
+
+	// Alpha testing for cut-out transparency (fences, leaves, etc.)
+	"$alphatest" "0"
+
+	// Backface culling (0 = cull backfaces, 1 = render both sides)
+	// Enable for vegetation, cloth, or thin surfaces
+	"$nocull" "0"
+}

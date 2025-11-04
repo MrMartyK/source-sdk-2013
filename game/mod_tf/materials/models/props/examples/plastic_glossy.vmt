@@ -1,0 +1,16 @@
+// Source 1.5 PBR Material - Glossy Plastic Example
+// Non-metallic, low-medium roughness, subtle reflections
+
+"PBR"
+{
+	"$basetexture" "models/props/plastic/abs_black_albedo"
+	"$bumpmap" "models/props/plastic/abs_black_normal"
+	"$mraotexture" "models/props/plastic/abs_black_mrao"
+
+	// Metalness R: 0.0 (non-metal/dielectric)
+	// Roughness G: 0.3 (glossy plastic finish)
+	// AO B: 0.8-1.0 (subtle occlusion in corners)
+
+	"$envmap" "env_cubemap"
+	"$surfaceprop" "plastic"
+}

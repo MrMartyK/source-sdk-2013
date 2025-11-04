@@ -1,0 +1,16 @@
+// Source 1.5 PBR Material - Polished Steel Example
+// Metallic, low roughness, strong reflections
+
+"PBR"
+{
+	"$basetexture" "models/props/metal/steel_albedo"
+	"$bumpmap" "models/props/metal/steel_normal"
+	"$mraotexture" "models/props/metal/steel_mrao"
+
+	// Metalness R: 1.0 (full metal)
+	// Roughness G: 0.2 (polished/glossy)
+	// AO B: 0.9-1.0 (minimal occlusion)
+
+	"$envmap" "env_cubemap"
+	"$surfaceprop" "metal"
+}

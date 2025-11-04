@@ -1,0 +1,16 @@
+// Source 1.5 PBR Material - Oak Wood Example
+// Non-metallic, medium-high roughness, natural look
+
+"PBR"
+{
+	"$basetexture" "models/props/wood/oak_albedo"
+	"$bumpmap" "models/props/wood/oak_normal"
+	"$mraotexture" "models/props/wood/oak_mrao"
+
+	// Metalness R: 0.0 (non-metal/dielectric)
+	// Roughness G: 0.7 (fairly rough surface)
+	// AO B: 0.5-0.9 (emphasizes grain and knots)
+
+	"$envmap" "env_cubemap"
+	"$surfaceprop" "wood"
+}
