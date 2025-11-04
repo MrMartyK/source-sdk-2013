@@ -62,14 +62,15 @@
 ## Phase 3 — PBR Materials (weeks 3–5)
 
 * [x] **PBR shader foundation** (BRDF functions, VS/PS, material system) - source files ready
-* [ ] **PBR shader compilation** (add to build system, compile, test)
+* [x] **PBR shader build integration** (added to sdkshaders_dx9_20b.txt, documented)
+* [ ] **PBR shader compilation** (run buildshaders.bat, test compiled shaders)
 * [ ] **Authoring preset**: Substance Painter export (albedo/normal/MRAO)
 * [ ] **Starter library**: 5 CC0 materials (metal/wood/concrete/plastic/fabric)
 * [ ] **Docs**: "Hello PBR Prop" (2-min video + steps)
 
 **DoD:** Side-by-side Phong vs PBR; sample assets render correctly; doc followed by fresh user in <15 min.
 
-**STATUS**: 🔄 40% Complete (shader foundation ✅, build integration pending)
+**STATUS**: 🔄 55% Complete (shader foundation ✅, build integration ✅, compilation pending)
 
 ---
 
@@ -160,9 +161,14 @@
 - [x] SSAO noise texture generation (4x4 random rotations)
 - [x] Comprehensive integration documentation (SSAO_INTEGRATION.md, 500+ lines)
 
+### ✅ Day 5 Extended - Shader Build Integration
+- [x] Add PBR shaders to sdkshaders_dx9_20b.txt
+- [x] Add SSAO shaders to sdkshaders_dx9_20b.txt
+- [x] Create shader build documentation (SHADER_BUILD_INTEGRATION.md, 300+ lines)
+
 ### 🔄 In Progress (Next)
 - [ ] SSAO lighting integration (modify lighting shaders)
-- [ ] PBR shader build integration (add to shader compile system)
+- [ ] PBR shader compilation (run buildshaders.bat, test)
 
 ---
 
@@ -227,11 +233,11 @@
 
 ## Progress Summary
 
-**Overall**: 48% Complete (Phases 0-3 in progress)
+**Overall**: 50% Complete (Phases 0-3 in progress)
 
-**Current Focus**: Phase 2 SSAO Integration (95% complete), Phase 3 PBR Materials
+**Current Focus**: Phase 2 SSAO Integration (95%), Phase 3 PBR Materials (55%)
 
-**Recent**: SSAO render pipeline ✅, bilateral blur ✅, render targets ✅, noise generation ✅
+**Recent**: Shader build integration ✅, SSAO render pipeline ✅, PBR foundation ✅
 
 **Next**: SSAO lighting integration, PBR shader compilation, material library
 
@@ -239,5 +245,5 @@
 
 ---
 
-*Last updated: 2025-11-04 (Day 5 extended - SSAO integration)*
-*Active sprint: SSAO render pipeline complete, PBR shader foundation ready*
+*Last updated: 2025-11-04 (Day 5 extended - shader build integration)*
+*Active sprint: SSAO render pipeline complete, PBR shaders in build system*

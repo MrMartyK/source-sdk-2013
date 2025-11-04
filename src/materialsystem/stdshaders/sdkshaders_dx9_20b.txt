@@ -14,3 +14,11 @@ sdk_bloom_ps2x.fxc
 sdk_screenspaceeffect_vs20.fxc
 
 sdk_bloomadd_ps2x.fxc
+
+// Source 1.5 - PBR (Physically-Based Rendering)
+pbr_vs20.fxc
+pbr_ps20b.fxc
+
+// Source 1.5 - SSAO (Screen Space Ambient Occlusion)
+ssao_ps20b.fxc
+ssao_blur_ps20b.fxc
