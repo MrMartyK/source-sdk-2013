@@ -8,7 +8,7 @@
 #define MATH_EXTRA_H
 
 #ifdef _WIN32
-#pragma once
+#	pragma once
 #endif
 
 namespace S15 {
