@@ -6,90 +6,139 @@ on:
   pull_request:
     branches: [ master, source-1.5 ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
   BUILD_TYPE: Release
 
 jobs:
   build-windows:
     runs-on: windows-2022
-
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
-      with:
-        msbuild-architecture: x64
+      - name: Enable long paths
+        run: |
+          git config --system core.longpaths true
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
 
-    - name: Cache VPC generated projects
-      uses: actions/cache@v4
-      with:
-        path: src/_vpc_/generated
-        key: ${{ runner.os }}-vpc-${{ hashFiles('src/vpc_scripts/**/*.vpc') }}
+      - name: Setup Python (for future parity scripts)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-    - name: Generate Visual Studio projects
-      working-directory: src
-      shell: cmd
-      run: |
-        call createallprojects.bat
+      - name: Cache VPC generated projects
+        uses: actions/cache@v4
+        with:
+          path: src/_vpc_/generated
+          key: ${{ runner.os }}-vpc-${{ hashFiles('src/**/*.vpc', 'src/**/*.vpcproj', 'src/**/*.vpcuser') }}
 
-    - name: Build everything.sln
-      working-directory: src
-      run: |
-        msbuild everything.sln /m /v:minimal
+      - name: Generate Visual Studio projects (VPC)
+        working-directory: src
+        shell: cmd
+        run: |
+          call createallprojects.bat
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      if: success()
-      with:
-        name: windows-x64-sdk-binaries
-        path: |
-          src/game/*/bin/client.dll
-          src/game/*/bin/server.dll
-          src/game/*/bin/*.pdb
-        retention-days: 7
-      continue-on-error: true
+      - name: Build everything.sln (Release|x64)
+        working-directory: src
+        shell: pwsh
+        run: >
+          msbuild everything.sln
+          /m
+          /p:Configuration=${{ env.BUILD_TYPE }}
+          /p:Platform=x64
+          /p:UseMultiToolTask=true
+          /p:Deterministic=true
+          /v:m
 
-    - name: Build CMake tests
-      working-directory: .
-      run: |
-        cmake -S . -B build_ci -DCMAKE_BUILD_TYPE=Release
-        cmake --build build_ci --config Release --target source15_tests
+      - name: Upload binaries
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-sdk-binaries
+          path: |
+            src/game/*/bin/*.dll
+            src/game/*/bin/*.exe
+          retention-days: 7
 
-    - name: Run unit tests
-      working-directory: build_ci
-      run: |
-        ctest --output-on-failure -C Release --verbose
+      - name: Upload symbols (best-effort)
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-symbols
+          path: |
+            src/game/*/bin/*.pdb
+          retention-days: 7
 
-    - name: Run smoke tests (placeholder)
-      if: success()
-      shell: cmd
-      run: |
-        echo TODO: Add headless map launch tests for parity testing
-        exit 0
+      # ---- CMake side (tests & new modules) ----
+      - name: Configure (CMake)
+        run: cmake -S . -B build_ci -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build tests (CMake)
+        run: cmake --build build_ci --config ${{ env.BUILD_TYPE }} --target source15_tests
+
+      - name: Run unit tests (CTest with JUnit)
+        working-directory: build_ci
+        run: |
+          ctest -C $env:BUILD_TYPE --output-on-failure --verbose --timeout 600 --no-tests=error
+          ctest -C $env:BUILD_TYPE -T Test --no-compress-output
+        shell: pwsh
+
+      - name: Upload CTest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-windows
+          path: |
+            build_ci/Testing/**/Test.xml
+            build_ci/Testing/**/LastTest.log
+
+      - name: Run smoke tests (deterministic flags; placeholder)
+        if: success()
+        shell: pwsh
+        run: |
+          echo "TODO parity: launch headless with deterministic flags:"
+          echo "-novid -nosound -nomsaa -softparticlesdefaultoff +fps_max 0 +mat_vsync 0 +mat_queue_mode -1"
+          exit 0
 
   static-analysis:
     runs-on: windows-2022
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup clang-tidy
-      run: |
-        choco install llvm -y
+      - name: Install LLVM (clang-format/clang-tidy)
+        run: choco install llvm -y
 
-    - name: Run clang-format check
-      if: false
-      run: |
-        echo "TODO: Add clang-format check when .clang-format is added"
+      - name: Configure (CMake) for analysis
+        run: cmake -S . -B build_ana -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSOURCE15_BUILD_TESTS=ON
 
-    - name: Static analysis placeholder
-      run: |
-        echo "TODO: Add cppcheck, clang-tidy after CMake migration"
+      - name: clang-format (dry run)
+        shell: pwsh
+        run: |
+          if (Test-Path ".clang-format") {
+            $files = git ls-files *.h *.hpp *.c *.cpp
+            if ($files) { clang-format --dry-run --Werror $files }
+          } else {
+            echo "No .clang-format yet; skipping."
+          }
+
+      - name: clang-tidy (baseline; non-blocking for now)
+        continue-on-error: true
+        run: |
+          cmake --build build_ana --config RelWithDebInfo --target source15_tests -- -m
+          python - << 'PY'
+          print("TODO: wire clang-tidy via CMAKE_C_CLANG_TIDY/CMAKE_CXX_CLANG_TIDY and a .clang-tidy")
+          PY
