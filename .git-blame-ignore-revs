@@ -1,0 +1,13 @@
+# Git Blame Ignore Revs
+#
+# This file lists commits that should be ignored by git blame.
+# Typically these are bulk formatting/refactoring commits that don't
+# change actual logic.
+#
+# To use this file locally:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub automatically respects this file when viewing blame.
+
+# Bulk formatting of framework and test files with clang-format (2025-11-03)
+dc1b9870b85732e2aa36bc1e78be9cd9f28e8b9c

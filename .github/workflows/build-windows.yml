@@ -112,38 +112,31 @@ jobs:
           echo "-novid -nosound -nomsaa -softparticlesdefaultoff +fps_max 0 +mat_vsync 0 +mat_queue_mode -1"
           exit 0
 
+  format-check:
+    name: Check formatting (changed lines only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git diff
+
+      - name: Check formatting of changed lines
+        uses: jidicula/clang-format-action@v4.13.0
+        with:
+          clang-format-version: '18'
+          check-path: 'src'
+          fallback-style: 'file'
+
   static-analysis:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install LLVM (clang-format/clang-tidy)
+      - name: Install LLVM (clang-tidy)
         run: choco install llvm -y
 
       - name: Configure (CMake) for analysis
         run: cmake -S . -B build_ana -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSOURCE15_BUILD_TESTS=ON
-
-      - name: clang-format (dry run)
-        shell: pwsh
-        run: |
-          if (Test-Path ".clang-format") {
-            # Only check our new code (framework and tests), not Valve's original SDK files
-            $files = git ls-files src/framework/ tests/ | Where-Object { $_ -match '\.(h|hpp|c|cpp)$' }
-            if ($files) {
-              # Process in batches to avoid Windows command line length limits
-              $files | ForEach-Object -Begin { $batch = @() } -Process {
-                $batch += $_
-                if ($batch.Count -eq 50) {
-                  clang-format --dry-run --Werror $batch
-                  $batch = @()
-                }
-              } -End {
-                if ($batch.Count -gt 0) { clang-format --dry-run --Werror $batch }
-              }
-            }
-          } else {
-            echo "No .clang-format yet; skipping."
-          }
 
       - name: clang-tidy (baseline; non-blocking for now)
         continue-on-error: true
