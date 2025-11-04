@@ -13,6 +13,10 @@ add_library(lib_framework STATIC
 	serialization.cpp
 	serialization.h
 
+	# Color grading and tonemapping
+	color_grading.cpp
+	color_grading.h
+
 	# TODO: Add more as we extract from game/shared
 )
 

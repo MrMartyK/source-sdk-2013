@@ -14,6 +14,7 @@ add_executable(source15_tests
 	# Framework tests
 	test_string_utils.cpp
 	test_string_utils_advanced.cpp
+	test_color_grading.cpp
 
 	# Add more test files here
 )
