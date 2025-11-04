@@ -146,24 +146,36 @@ ctest -C Release -T Test --no-compress-output
 - Test history tracking
 - Downloadable test logs for debugging
 
-### 8. Static Analysis
+### 8. Static Analysis (Industry-Standard Incremental Formatting)
 
-**Before**: Placeholder with disabled checks
+**Before**: No formatting checks (or bulk file formatting attempts)
 
-**After**: Active clang-format and clang-tidy checks
+**After**: Incremental formatting with industry-standard tooling
 
-**clang-format (scoped to new code only)**:
+**clang-format (changed lines only)** - INDUSTRY BEST PRACTICE:
 ```yaml
-- name: clang-format (dry run)
-  run: |
-    if (Test-Path ".clang-format") {
-      # Only check our new code (framework and tests), not Valve's original SDK files
-      $files = git ls-files src/framework/ tests/ | Where-Object { $_ -match '\.(h|hpp|c|cpp)$' }
-      if ($files) { clang-format --dry-run --Werror $files }
-    } else {
-      echo "No .clang-format yet; skipping."
-    }
+format-check:
+  name: Check formatting (changed lines only)
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history for git diff
+
+    - name: Check formatting of changed lines
+      uses: jidicula/clang-format-action@v4.13.0
+      with:
+        clang-format-version: '18'
+        check-path: 'src'
+        fallback-style: 'file'
 ```
+
+**Why this approach:**
+- Uses `git clang-format --diff` under the hood
+- Checks **only lines you changed**, not entire files
+- Preserves git history (no bulk reformatting)
+- Industry standard: LLVM, Google, Chromium all use this
+- Fast: Ubuntu runner, diff-based checking
 
 **clang-tidy (baseline, non-blocking)**:
 ```yaml
@@ -174,10 +186,14 @@ ctest -C Release -T Test --no-compress-output
 ```
 
 **Benefits**:
-- Code style enforcement on new code only (framework/ and tests/)
-- Doesn't check Valve's original SDK files (preserves original formatting)
-- Static analysis baseline (will become blocking later)
-- Separate job doesn't block main build
+- ✅ Checks only YOUR changes (not Valve's SDK code)
+- ✅ Checks only LINES you modified (not whole files)
+- ✅ Preserves git blame and history
+- ✅ Gradual improvement over time
+- ✅ Developer-friendly (clear, actionable errors)
+- ✅ No disruptive bulk reformatting
+
+**Reference**: See `docs/FORMATTING_STRATEGY.md` for full incremental adoption plan
 
 ### 9. Deterministic Smoke Test Flags
 
