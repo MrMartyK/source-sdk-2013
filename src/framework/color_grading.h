@@ -128,6 +128,31 @@ Vector3 AdjustContrast(const Vector3& color, float contrast);
  */
 Vector3 AdjustBrightness(const Vector3& color, float brightness);
 
+/**
+ * Generate SSAO sample kernel
+ *
+ * Creates a hemisphere of random sample points oriented around +Z axis.
+ * Samples are lerped toward center for better distribution.
+ *
+ * @param sampleCount Number of samples (typically 16, 32, or 64)
+ * @param kernel Output array of Vector3 samples (must be pre-allocated)
+ */
+void GenerateSSAOKernel(int sampleCount, Vector3* kernel);
+
+/**
+ * Calculate SSAO occlusion factor
+ *
+ * Compares depth samples in hemisphere around surface normal.
+ * Returns occlusion factor (0 = fully occluded, 1 = no occlusion).
+ *
+ * @param sampleDepths Array of sampled depths (scene depth buffer)
+ * @param centerDepth Depth at current fragment
+ * @param radius SSAO sampling radius
+ * @param sampleCount Number of depth samples
+ * @return Occlusion factor (0 to 1)
+ */
+float CalculateSSAOOcclusion(const float* sampleDepths, float centerDepth, float radius, int sampleCount);
+
 } // namespace S15
 
 #endif // COLOR_GRADING_H

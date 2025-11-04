@@ -31,6 +31,14 @@ ConVar mat_contrast( "mat_contrast", "1.0", FCVAR_ARCHIVE, "Contrast adjustment 
 ConVar mat_brightness( "mat_brightness", "1.0", FCVAR_ARCHIVE, "Brightness adjustment (0=black, 1=normal, 2=double)" );
 ConVar mat_color_temperature( "mat_color_temperature", "6500", FCVAR_ARCHIVE, "White balance in Kelvin (2000=warm, 6500=neutral, 10000=cool)" );
 
+// SSAO (Screen-Space Ambient Occlusion) ConVars - Source 1.5
+ConVar mat_ssao( "mat_ssao", "0", FCVAR_ARCHIVE, "Enable SSAO (Screen-Space Ambient Occlusion). 0=off, 1=on" );
+ConVar mat_ssao_radius( "mat_ssao_radius", "0.5", FCVAR_CHEAT, "SSAO sampling radius in world units (0.1 to 2.0)" );
+ConVar mat_ssao_intensity( "mat_ssao_intensity", "1.0", FCVAR_CHEAT, "SSAO occlusion intensity (0.0 to 2.0)" );
+ConVar mat_ssao_bias( "mat_ssao_bias", "0.025", FCVAR_CHEAT, "SSAO depth bias to prevent self-occlusion (0.0 to 0.1)" );
+ConVar mat_ssao_samples( "mat_ssao_samples", "16", FCVAR_CHEAT, "SSAO sample count (8, 16, 32, 64)" );
+ConVar mat_debug_ssao( "mat_debug_ssao", "0", FCVAR_CHEAT, "Show SSAO occlusion buffer. 0=off, 1=show occlusion" );
+
 extern ConVar r_flashlight_version2;
 
 class CLightmappedGeneric_DX9_Context : public CBasePerMaterialContextData
@@ -1016,6 +1024,23 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 		colorGradingParams2[2] = 0.0f; // Reserved
 		colorGradingParams2[3] = 0.0f; // Reserved
 		DynamicCmdsOut.SetPixelShaderConstant( 26, colorGradingParams2, 1 );
+
+		// Set SSAO parameters - Source 1.5
+		// Register c24: radius, intensity, bias, sample count
+		float ssaoParams1[4];
+		ssaoParams1[0] = mat_ssao_radius.GetFloat();
+		ssaoParams1[1] = mat_ssao_intensity.GetFloat();
+		ssaoParams1[2] = mat_ssao_bias.GetFloat();
+		ssaoParams1[3] = (float)mat_ssao_samples.GetInt();
+		DynamicCmdsOut.SetPixelShaderConstant( 24, ssaoParams1, 1 );
+
+		// Register c25: enabled flag, reserved
+		float ssaoParams2[4];
+		ssaoParams2[0] = (float)mat_ssao.GetInt();
+		ssaoParams2[1] = 0.0f; // Reserved
+		ssaoParams2[2] = 0.0f; // Reserved
+		ssaoParams2[3] = 0.0f; // Reserved
+		DynamicCmdsOut.SetPixelShaderConstant( 25, ssaoParams2, 1 );
 
 		DynamicCmdsOut.End();
 		pShaderAPI->ExecuteCommandBuffer( DynamicCmdsOut.Base() );

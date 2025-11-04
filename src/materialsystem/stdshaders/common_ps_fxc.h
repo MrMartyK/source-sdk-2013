@@ -63,6 +63,17 @@ const float4 cColorGradingParams2 : register( c26 );
 #define COLOR_GRADING_TEMPERATURE (cColorGradingParams2.x)
 // .y, .z, .w reserved for future use
 
+// SSAO parameters (Source 1.5)
+const float4 cSSAOParams1 : register( c24 );
+#define SSAO_RADIUS (cSSAOParams1.x)
+#define SSAO_INTENSITY (cSSAOParams1.y)
+#define SSAO_BIAS (cSSAOParams1.z)
+#define SSAO_SAMPLE_COUNT (cSSAOParams1.w)
+
+const float4 cSSAOParams2 : register( c25 );
+#define SSAO_ENABLED (cSSAOParams2.x)
+// .y, .z, .w reserved for future use
+
 // Flashlight constants
 #if defined(SHADER_MODEL_PS_2_0) || defined(SHADER_MODEL_PS_2_B) || defined(SHADER_MODEL_PS_3_0)
  const float4 cFlashlightColor       : register( c28 );
@@ -521,6 +532,125 @@ float3 AdjustContrast( float3 color, float contrast )
 float3 AdjustBrightness( float3 color, float brightness )
 {
 	return saturate( color * brightness );
+}
+
+//===================================================================================//
+// SSAO (Screen-Space Ambient Occlusion) Functions - Source 1.5
+//===================================================================================//
+
+/**
+ * Calculate SSAO occlusion factor from depth samples
+ *
+ * Compares depth samples in hemisphere around surface normal.
+ * Returns occlusion factor (0 = fully occluded, 1 = no occlusion).
+ *
+ * This is the HLSL equivalent of the C++ reference implementation.
+ * For full SSAO rendering, use this with depth texture sampling.
+ *
+ * @param sampleDepths Array of sampled depths (from depth buffer)
+ * @param centerDepth Depth at current fragment
+ * @param radius SSAO sampling radius
+ * @param sampleCount Number of depth samples
+ * @return Occlusion factor (0 to 1)
+ */
+float CalculateSSAOOcclusion( float sampleDepths[64], float centerDepth, float radius, int sampleCount )
+{
+	// Calculate occlusion factor based on depth samples
+	// Samples closer than centerDepth contribute to occlusion
+
+	int occludedCount = 0;
+
+	for (int i = 0; i < sampleCount; i++)
+	{
+		float sampleDepth = sampleDepths[i];
+
+		// Calculate depth difference
+		float depthDiff = centerDepth - sampleDepth;
+
+		// If sample is in front of surface (closer to camera), it occludes
+		if (depthDiff > 0.0f && depthDiff <= radius)
+		{
+			occludedCount++;
+		}
+	}
+
+	// Calculate occlusion ratio
+	float occlusionRatio = (float)occludedCount / (float)sampleCount;
+
+	// Convert to occlusion factor where 1 = no occlusion, 0 = full occlusion
+	float occlusionFactor = 1.0f - occlusionRatio;
+
+	// Clamp to valid range
+	occlusionFactor = saturate(occlusionFactor);
+
+	return occlusionFactor;
+}
+
+/**
+ * Calculate SSAO for a pixel using depth texture sampling
+ *
+ * This is a more complete SSAO implementation that samples the depth buffer
+ * in a hemisphere pattern around the current pixel.
+ *
+ * @param depthSampler Depth buffer sampler
+ * @param normalSampler Normal buffer sampler (for hemisphere orientation)
+ * @param noiseSampler Noise texture sampler (for random rotation)
+ * @param texCoord Screen space UV coordinates
+ * @param centerDepth Depth at current pixel
+ * @param viewPos View space position
+ * @param kernel Array of sample kernel offsets (uploaded from CPU)
+ * @param kernelSize Number of samples in kernel
+ * @return Occlusion factor (0 to 1, where 1 = no occlusion)
+ */
+float CalculateSSAOFromDepthBuffer(
+	sampler depthSampler,
+	sampler normalSampler,
+	sampler noiseSampler,
+	float2 texCoord,
+	float centerDepth,
+	float3 viewPos,
+	float3 kernel[64],
+	int kernelSize
+)
+{
+	// Get surface normal from normal buffer
+	float3 normal = tex2D(normalSampler, texCoord).xyz * 2.0f - 1.0f;
+
+	// Get random rotation from noise texture
+	float3 randomVec = tex2D(noiseSampler, texCoord * 4.0f).xyz * 2.0f - 1.0f;
+
+	// Create TBN matrix to orient samples around surface normal
+	float3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+	float3 bitangent = cross(normal, tangent);
+	float3x3 TBN = float3x3(tangent, bitangent, normal);
+
+	// Sample depth buffer in hemisphere
+	float occlusion = 0.0f;
+	for (int i = 0; i < kernelSize; i++)
+	{
+		// Orient sample in TBN space
+		float3 samplePos = mul(kernel[i], TBN);
+		samplePos = viewPos + samplePos * SSAO_RADIUS;
+
+		// Project sample to screen space
+		// (Note: This requires projection matrix, simplified here)
+		float2 sampleTexCoord = texCoord + samplePos.xy * 0.01f; // Placeholder
+
+		// Sample depth at offset position
+		float sampleDepth = tex2D(depthSampler, sampleTexCoord).r;
+
+		// Range check & accumulate occlusion
+		float rangeCheck = abs(centerDepth - sampleDepth) < SSAO_RADIUS ? 1.0f : 0.0f;
+		occlusion += (sampleDepth >= samplePos.z + SSAO_BIAS ? 1.0f : 0.0f) * rangeCheck;
+	}
+
+	// Normalize and invert (1.0 = no occlusion)
+	occlusion = 1.0f - (occlusion / (float)kernelSize);
+
+	// Apply intensity
+	occlusion = pow(occlusion, SSAO_INTENSITY);
+
+	return saturate(occlusion);
 }
 
 float4 FinalOutput( const float4 vShaderColor, float pixelFogFactor, const int iPIXELFOGTYPE, const int iTONEMAP_SCALE_TYPE, const bool bWriteDepthToDestAlpha = false, const float flProjZ = 1.0f )

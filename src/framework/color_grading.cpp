@@ -6,7 +6,8 @@
 
 #include "color_grading.h"
 #include <algorithm> // For std::min, std::max
-#include <cmath>     // For pow, lerp
+#include <cmath>     // For pow, sqrt
+#include <cstdlib>   // For rand, srand
 
 namespace S15 {
 
@@ -205,6 +206,84 @@ Vector3 AdjustBrightness(const Vector3& color, float brightness) {
 	result.z = Saturate(result.z);
 
 	return result;
+}
+
+// Helper: Generate random float in [0, 1]
+static float RandomFloat() {
+	return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+}
+
+// Helper: Lerp between two floats
+static float Lerp(float a, float b, float t) {
+	return a + t * (b - a);
+}
+
+void GenerateSSAOKernel(int sampleCount, Vector3* kernel) {
+	// Generate random samples in hemisphere oriented along +Z
+	// Samples are lerped toward center for better distribution
+	// Based on LearnOpenGL SSAO tutorial
+
+	std::srand(0); // Fixed seed for deterministic results
+
+	for (int i = 0; i < sampleCount; i++) {
+		// Random point in hemisphere
+		Vector3 sample;
+		sample.x = RandomFloat() * 2.0f - 1.0f; // [-1, 1]
+		sample.y = RandomFloat() * 2.0f - 1.0f; // [-1, 1]
+		sample.z = RandomFloat(); // [0, 1] - upper hemisphere only
+
+		// Normalize to unit sphere
+		float length = std::sqrt(sample.x * sample.x + sample.y * sample.y + sample.z * sample.z);
+		if (length > 0.001f) {
+			sample.x /= length;
+			sample.y /= length;
+			sample.z /= length;
+		}
+
+		// Scale by random length [0, 1]
+		float scale = RandomFloat();
+
+		// Lerp samples closer to origin for better distribution
+		// More samples near origin = better contact shadows
+		float ratio = static_cast<float>(i) / static_cast<float>(sampleCount);
+		scale = Lerp(0.1f, 1.0f, ratio * ratio); // Quadratic distribution
+
+		sample.x *= scale;
+		sample.y *= scale;
+		sample.z *= scale;
+
+		kernel[i] = sample;
+	}
+}
+
+float CalculateSSAOOcclusion(const float* sampleDepths, float centerDepth, float radius, int sampleCount) {
+	// Calculate occlusion factor based on depth samples
+	// Samples closer than centerDepth contribute to occlusion
+
+	int occludedCount = 0;
+
+	for (int i = 0; i < sampleCount; i++) {
+		float sampleDepth = sampleDepths[i];
+
+		// Calculate depth difference
+		float depthDiff = centerDepth - sampleDepth;
+
+		// If sample is in front of surface (closer to camera), it occludes
+		if (depthDiff > 0.0f && depthDiff <= radius) {
+			occludedCount++;
+		}
+	}
+
+	// Calculate occlusion ratio
+	float occlusionRatio = static_cast<float>(occludedCount) / static_cast<float>(sampleCount);
+
+	// Convert to occlusion factor where 1 = no occlusion, 0 = full occlusion
+	float occlusionFactor = 1.0f - occlusionRatio;
+
+	// Clamp to valid range
+	occlusionFactor = Saturate(occlusionFactor);
+
+	return occlusionFactor;
 }
 
 } // namespace S15

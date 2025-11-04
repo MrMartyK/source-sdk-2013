@@ -481,3 +481,148 @@ TEST_CASE("Brightness adjustment shifts all values", "[color_grading][brightness
 		REQUIRE(brightWhite.x >= 1.0f); // 1 * 1.5 = 1.5 (clamped to 1.0)
 	}
 }
+
+// ============================================================================
+// SSAO (Screen-Space Ambient Occlusion) Tests
+// ============================================================================
+
+TEST_CASE("SSAO kernel generation creates hemisphere distribution", "[ssao][kernel]") {
+	SECTION("Kernel with 16 samples") {
+		const int sampleCount = 16;
+		Vector3 kernel[sampleCount];
+		GenerateSSAOKernel(sampleCount, kernel);
+
+		// All samples should be in upper hemisphere (z > 0)
+		for (int i = 0; i < sampleCount; i++) {
+			REQUIRE(kernel[i].z > 0.0f);
+		}
+
+		// Samples should be within unit hemisphere
+		for (int i = 0; i < sampleCount; i++) {
+			float length = std::sqrt(kernel[i].x * kernel[i].x +
+			                         kernel[i].y * kernel[i].y +
+			                         kernel[i].z * kernel[i].z);
+			REQUIRE(length <= 1.0f);
+			REQUIRE(length > 0.0f); // Not degenerate
+		}
+	}
+
+	SECTION("Kernel samples are distributed") {
+		const int sampleCount = 32;
+		Vector3 kernel[sampleCount];
+		GenerateSSAOKernel(sampleCount, kernel);
+
+		// Check that samples are not all identical (randomness)
+		bool allSame = true;
+		for (int i = 1; i < sampleCount; i++) {
+			if (std::abs(kernel[i].x - kernel[0].x) > 0.01f ||
+			    std::abs(kernel[i].y - kernel[0].y) > 0.01f ||
+			    std::abs(kernel[i].z - kernel[0].z) > 0.01f) {
+				allSame = false;
+				break;
+			}
+		}
+		REQUIRE(!allSame); // Samples should be different
+	}
+
+	SECTION("Kernel with 64 samples") {
+		const int sampleCount = 64;
+		Vector3 kernel[sampleCount];
+		GenerateSSAOKernel(sampleCount, kernel);
+
+		// Verify all samples in upper hemisphere
+		int validSamples = 0;
+		for (int i = 0; i < sampleCount; i++) {
+			if (kernel[i].z > 0.0f) {
+				validSamples++;
+			}
+		}
+		REQUIRE(validSamples == sampleCount);
+	}
+}
+
+TEST_CASE("SSAO occlusion calculation determines shadowing", "[ssao][occlusion]") {
+	SECTION("No occlusion when all samples at same depth") {
+		const int sampleCount = 16;
+		float sampleDepths[sampleCount];
+		float centerDepth = 10.0f;
+		float radius = 1.0f;
+
+		// All samples at same depth (no occlusion)
+		for (int i = 0; i < sampleCount; i++) {
+			sampleDepths[i] = centerDepth;
+		}
+
+		float occlusion = CalculateSSAOOcclusion(sampleDepths, centerDepth, radius, sampleCount);
+		REQUIRE_THAT(occlusion, WithinAbs(1.0f, 0.1f)); // No occlusion = 1.0
+	}
+
+	SECTION("Full occlusion when all samples in front") {
+		const int sampleCount = 16;
+		float sampleDepths[sampleCount];
+		float centerDepth = 10.0f;
+		float radius = 1.0f;
+
+		// All samples closer (fully occluded)
+		for (int i = 0; i < sampleCount; i++) {
+			sampleDepths[i] = centerDepth - radius;
+		}
+
+		float occlusion = CalculateSSAOOcclusion(sampleDepths, centerDepth, radius, sampleCount);
+		REQUIRE(occlusion < 0.5f); // Heavy occlusion
+	}
+
+	SECTION("Partial occlusion with mixed depths") {
+		const int sampleCount = 16;
+		float sampleDepths[sampleCount];
+		float centerDepth = 10.0f;
+		float radius = 1.0f;
+
+		// Half samples occluded, half not
+		for (int i = 0; i < sampleCount / 2; i++) {
+			sampleDepths[i] = centerDepth - radius; // Occluded
+		}
+		for (int i = sampleCount / 2; i < sampleCount; i++) {
+			sampleDepths[i] = centerDepth + radius; // Not occluded
+		}
+
+		float occlusion = CalculateSSAOOcclusion(sampleDepths, centerDepth, radius, sampleCount);
+		REQUIRE(occlusion > 0.3f); // Partial occlusion
+		REQUIRE(occlusion < 0.7f);
+	}
+
+	SECTION("Occlusion factor is clamped to [0, 1]") {
+		const int sampleCount = 16;
+		float sampleDepths[sampleCount];
+		float centerDepth = 10.0f;
+		float radius = 1.0f;
+
+		// Extreme occlusion
+		for (int i = 0; i < sampleCount; i++) {
+			sampleDepths[i] = 0.0f; // Very close
+		}
+
+		float occlusion = CalculateSSAOOcclusion(sampleDepths, centerDepth, radius, sampleCount);
+		REQUIRE(occlusion >= 0.0f);
+		REQUIRE(occlusion <= 1.0f);
+	}
+
+	SECTION("Radius affects occlusion range") {
+		const int sampleCount = 16;
+		float sampleDepths[sampleCount];
+		float centerDepth = 10.0f;
+
+		// Samples at varying distances
+		for (int i = 0; i < sampleCount; i++) {
+			sampleDepths[i] = centerDepth - 1.5f; // 1.5 units closer
+		}
+
+		// Small radius = samples beyond range (no occlusion)
+		float occlusionSmall = CalculateSSAOOcclusion(sampleDepths, centerDepth, 1.0f, sampleCount);
+
+		// Large radius = samples within range (occlusion detected)
+		float occlusionLarge = CalculateSSAOOcclusion(sampleDepths, centerDepth, 2.0f, sampleCount);
+
+		REQUIRE(occlusionSmall > occlusionLarge); // Small radius misses far samples
+	}
+}
