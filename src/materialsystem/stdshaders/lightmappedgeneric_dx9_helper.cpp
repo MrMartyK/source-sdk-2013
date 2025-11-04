@@ -22,6 +22,7 @@ ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 ConVar my_mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 
 ConVar r_lightmap_bicubic( "r_lightmap_bicubic", "0", FCVAR_NONE, "Enable bi-cubic (high quality) lightmap sampling." );
+ConVar mat_tonemapping_mode( "mat_tonemapping_mode", "0", FCVAR_ARCHIVE, "Tonemapping mode: 0=None, 1=Linear, 2=Gamma, 3=ACES" );
 
 extern ConVar r_flashlight_version2;
 

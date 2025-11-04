@@ -64,6 +64,7 @@ const float4 cLightScale : register( c30 );
 #define TONEMAP_SCALE_NONE 0
 #define TONEMAP_SCALE_LINEAR 1
 #define TONEMAP_SCALE_GAMMA 2
+#define TONEMAP_SCALE_ACES 3
 
 #define PIXEL_FOG_TYPE_NONE -1 //MATERIAL_FOG_NONE is handled by PIXEL_FOG_TYPE_RANGE, this is for explicitly disabling fog in the shader
 #define PIXEL_FOG_TYPE_RANGE 0 //range+none packed together in ps2b. Simply none in ps20 (instruction limits)
@@ -341,6 +342,27 @@ float DepthToDestAlpha( const float flProjZ )
 #endif
 }
 
+/**
+ * ACES Filmic Tonemap (Narkowicz 2015 approximation)
+ *
+ * Maps HDR color values (0 to infinity) to LDR range (0 to 1)
+ * using the ACES (Academy Color Encoding System) filmic curve.
+ *
+ * Reference: "ACES Filmic Tone Mapping Curve" by Krzysztof Narkowicz
+ *            https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+ *
+ * @param x Input HDR color (linear RGB, 0 to infinity)
+ * @return Output LDR color (sRGB-ready, 0 to 1)
+ */
+float3 ACESFilm( float3 x )
+{
+	const float a = 2.51f;
+	const float b = 0.03f;
+	const float c = 2.43f;
+	const float d = 0.59f;
+	const float e = 0.14f;
+	return saturate( (x * (a * x + b)) / (x * (c * x + d) + e) );
+}
 
 float4 FinalOutput( const float4 vShaderColor, float pixelFogFactor, const int iPIXELFOGTYPE, const int iTONEMAP_SCALE_TYPE, const bool bWriteDepthToDestAlpha = false, const float flProjZ = 1.0f )
 {
@@ -352,6 +374,11 @@ float4 FinalOutput( const float4 vShaderColor, float pixelFogFactor, const int i
 	else if( iTONEMAP_SCALE_TYPE == TONEMAP_SCALE_GAMMA )
 	{
 		result.rgb = vShaderColor.rgb * GAMMA_LIGHT_SCALE;
+	}
+	else if( iTONEMAP_SCALE_TYPE == TONEMAP_SCALE_ACES )
+	{
+		// Apply ACES filmic tonemap curve (Narkowicz 2015)
+		result.rgb = ACESFilm( vShaderColor.rgb );
 	}
 	else if( iTONEMAP_SCALE_TYPE == TONEMAP_SCALE_NONE )
 	{
