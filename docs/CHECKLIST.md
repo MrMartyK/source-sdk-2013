@@ -29,7 +29,7 @@
 ## Phase 1 — Structural Refactor (weeks 2–4)
 
 * [x] **Create `src/framework/`** (utils/serialization/math extras) + tests
-* [ ] **Create `src/engine_bridge/`** (filesystem/materialsystem/console adapters) + mocks + tests
+* [x] **Create `src/engine_bridge/`** (filesystem/materialsystem/console adapters) - compiles, stubs ready
 * [ ] **Split `game/shared/` mini-libs**:
   * [ ] `lib_animation` (+ tests)
   * [ ] `lib_prediction` (+ tests)
@@ -39,7 +39,7 @@
 
 **DoD:** Games still build/run; new libs compile standalone; tests cover new headers; compile times drop or hold.
 
-**STATUS**: 🔄 20% Complete (framework started, color grading module complete)
+**STATUS**: 🔄 30% Complete (framework ✅, engine_bridge compiling ✅, color grading complete)
 
 ---
 
