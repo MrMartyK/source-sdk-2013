@@ -152,12 +152,13 @@ ctest -C Release -T Test --no-compress-output
 
 **After**: Active clang-format and clang-tidy checks
 
-**clang-format (conditional)**:
+**clang-format (scoped to new code only)**:
 ```yaml
 - name: clang-format (dry run)
   run: |
     if (Test-Path ".clang-format") {
-      $files = git ls-files *.h *.hpp *.c *.cpp
+      # Only check our new code (framework and tests), not Valve's original SDK files
+      $files = git ls-files src/framework/ tests/ | Where-Object { $_ -match '\.(h|hpp|c|cpp)$' }
       if ($files) { clang-format --dry-run --Werror $files }
     } else {
       echo "No .clang-format yet; skipping."
@@ -173,7 +174,8 @@ ctest -C Release -T Test --no-compress-output
 ```
 
 **Benefits**:
-- Code style enforcement when .clang-format exists
+- Code style enforcement on new code only (framework/ and tests/)
+- Doesn't check Valve's original SDK files (preserves original formatting)
 - Static analysis baseline (will become blocking later)
 - Separate job doesn't block main build
 

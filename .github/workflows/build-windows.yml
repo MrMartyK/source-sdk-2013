@@ -127,7 +127,8 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path ".clang-format") {
-            $files = git ls-files *.h *.hpp *.c *.cpp
+            # Only check our new code (framework and tests), not Valve's original SDK files
+            $files = git ls-files src/framework/ tests/ | Where-Object { $_ -match '\.(h|hpp|c|cpp)$' }
             if ($files) {
               # Process in batches to avoid Windows command line length limits
               $files | ForEach-Object -Begin { $batch = @() } -Process {
